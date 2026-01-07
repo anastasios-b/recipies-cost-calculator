@@ -42,7 +42,11 @@ interface RecipeCostBreakdown {
 }
 
 function generateUUID(): string {
-    return crypto.randomUUID();
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
 }
 
 function validateRecipe(recipe: any): { valid: boolean; message?: string } {
@@ -182,22 +186,22 @@ async function getRecipeById(id: string, env: any): Promise<Recipe | null> {
 
     return {
         id: recipeResult.id,
-        name: recipeResult.name,
-        weight: recipeResult.weight,
+        name: recipeResult.name || '',
+        weight: recipeResult.weight || 0,
         dimensions: {
-            length: recipeResult.length_unit,
-            width: recipeResult.width,
-            height: recipeResult.height,
-            unit: recipeResult.dimension_unit
+            length: recipeResult.length_unit || 0,
+            width: recipeResult.width || 0,
+            height: recipeResult.height || 0,
+            unit: recipeResult.dimension_unit || ''
         },
-        yield_percentage: recipeResult.yield_percentage,
-        waste_factor: recipeResult.waste_factor,
-        unit_of_measure: recipeResult.unit_of_measure,
-        inventory_location: recipeResult.inventory_location,
+        yield_percentage: recipeResult.yield_percentage || 0,
+        waste_factor: recipeResult.waste_factor || 0,
+        unit_of_measure: recipeResult.unit_of_measure || '',
+        inventory_location: recipeResult.inventory_location || '',
         parts: partsResult.results || [],
         labor: laborResult.results || [],
-        created_at: recipeResult.created_at,
-        updated_at: recipeResult.updated_at
+        created_at: recipeResult.created_at || '',
+        updated_at: recipeResult.updated_at || ''
     };
 }
 
@@ -205,8 +209,9 @@ async function getAllRecipes(env: any): Promise<Recipe[]> {
     const recipesResult = await env.DB.prepare('SELECT * FROM recipes ORDER BY created_at DESC').all();
     
     const recipes: Recipe[] = [];
+    const recipeRows = recipesResult.results || [];
     
-    for (const recipeRow of recipesResult.results || []) {
+    for (const recipeRow of recipeRows) {
         const partsResult = await env.DB.prepare(
             'SELECT name, quantity, cost_per_unit FROM recipe_parts WHERE recipe_id = ?'
         ).bind(recipeRow.id).all();
@@ -217,22 +222,22 @@ async function getAllRecipes(env: any): Promise<Recipe[]> {
 
         recipes.push({
             id: recipeRow.id,
-            name: recipeRow.name,
-            weight: recipeRow.weight,
+            name: recipeRow.name || '',
+            weight: recipeRow.weight || 0,
             dimensions: {
-                length: recipeRow.length_unit,
-                width: recipeRow.width,
-                height: recipeRow.height,
-                unit: recipeRow.dimension_unit
+                length: recipeRow.length_unit || 0,
+                width: recipeRow.width || 0,
+                height: recipeRow.height || 0,
+                unit: recipeRow.dimension_unit || ''
             },
-            yield_percentage: recipeRow.yield_percentage,
-            waste_factor: recipeRow.waste_factor,
-            unit_of_measure: recipeRow.unit_of_measure,
-            inventory_location: recipeRow.inventory_location,
+            yield_percentage: recipeRow.yield_percentage || 0,
+            waste_factor: recipeRow.waste_factor || 0,
+            unit_of_measure: recipeRow.unit_of_measure || '',
+            inventory_location: recipeRow.inventory_location || '',
             parts: partsResult.results || [],
             labor: laborResult.results || [],
-            created_at: recipeRow.created_at,
-            updated_at: recipeRow.updated_at
+            created_at: recipeRow.created_at || '',
+            updated_at: recipeRow.updated_at || ''
         });
     }
     
@@ -364,8 +369,33 @@ export default {
 
         try {
             if (method === 'GET' && pathname === '/') {
-                const htmlContent = await env.ASSETS.fetch(new Request(request.url));
-                return htmlContent;
+                // Return a simple HTML response for now - ASSETS binding needs different setup
+                return new Response(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Recipe Cost Calculator</title>
+                        <meta charset="UTF-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    </head>
+                    <body>
+                        <h1>Recipe Cost Calculator API</h1>
+                        <p>API is running. Use the endpoints below:</p>
+                        <ul>
+                            <li>GET /api/recipes - Get all recipes</li>
+                            <li>POST /api/recipes - Create recipe</li>
+                            <li>GET /api/recipes/:id - Get recipe</li>
+                            <li>PUT /api/recipes/:id - Update recipe</li>
+                            <li>DELETE /api/recipes/:id - Delete recipe</li>
+                        </ul>
+                    </body>
+                    </html>
+                `, {
+                    headers: {
+                        'Content-Type': 'text/html',
+                        'Access-Control-Allow-Origin': '*'
+                    }
+                });
             }
 
             if (method === 'GET' && pathname === '/api/recipes/cost/summary') {

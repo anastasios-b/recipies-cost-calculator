@@ -3,10 +3,6 @@
 	"main": "src/index.ts",
 	"name": "recipes-cost-calculator",
 	"upload_source_maps": true,
-	"assets": {
-		"directory": "app_prototype",
-		"binding": "ASSETS"
-	},
 	"d1_databases": [
 		{
 			"binding": "DB",
